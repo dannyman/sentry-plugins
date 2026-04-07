@@ -26,7 +26,7 @@ BSD
 =head1 EXAMPLE MIB
 
 $ wget ftp://ftp.servertech.com/Pub/SNMP/Sentry4/Sentry4.mib
-$ snmpwalk -c public -v 2c -M +. -m +Sentry4-MIB 192.168.whatevs .1.3.6.1.4.1.1718.4.1.7
+$ snmpwalk -c public -v 2c -M +. -m +Sentry3-MIB 192.168.whatevs .1.3.6.1.4.1.1718.4.1.7
 Sentry4-MIB::st4BranchCurrentHysteresis.0 = INTEGER: 10 tenth Amps
 Sentry4-MIB::st4BranchID.1.1.1 = STRING: AA1
 Sentry4-MIB::st4BranchID.1.1.2 = STRING: AA2
@@ -48,8 +48,8 @@ Sentry4-MIB::st4BranchCurrent.1.1.1 = INTEGER: 405 hundredth Amps
 Sentry4-MIB::st4BranchCurrent.1.1.2 = INTEGER: 448 hundredth Amps
 Sentry4-MIB::st4BranchCurrentStatus.1.1.1 = INTEGER: normal(0)
 Sentry4-MIB::st4BranchCurrentStatus.1.1.2 = INTEGER: normal(0)
-Sentry4-MIB::st4BranchCurrentUtilized.1.1.1 = INTEGER: 202 tenth percent
-Sentry4-MIB::st4BranchCurrentUtilized.1.1.2 = INTEGER: 224 tenth percent
+Sentry4-MIB::st4BranchCurrent.1.1.1 = INTEGER: 202 tenth percent
+Sentry4-MIB::st4BranchCurrent.1.1.2 = INTEGER: 224 tenth percent
 Sentry4-MIB::st4BranchNotifications.1.1.1 = BITS: C0 snmpTrap(0) email(1) 
 Sentry4-MIB::st4BranchNotifications.1.1.2 = BITS: C0 snmpTrap(0) email(1) 
 Sentry4-MIB::st4BranchCurrentLowAlarm.1.1.1 = INTEGER: 0 tenth Amps
@@ -72,8 +72,8 @@ if (defined $ARGV[0] and $ARGV[0] eq "snmpconf") {
         exit 0;
 }
 
-my $session = Munin::Plugin::SNMP->session(-translate =>
-                                           [ -timeticks => 0x0 ]);
+my $session = Munin::Plugin::SNMP->session(
+    -translate    => [ -timeticks => 0x0 ]);
 
 my $sentry_h_2 = $session->get_hash (
 	-baseoid	=> ".1.3.6.1.4.1.1718.4.1.7.2.1",
@@ -139,7 +139,7 @@ foreach my $k ( keys %{$sentry_h_2} ) {
 	if ( $amps ) {
 		$amps = $amps * .01;
 	} else {
-		$amps = 'U';
+		$amps = 0;
 	}
 	print "$infeedName.value $amps\n";
 }
