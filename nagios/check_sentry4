@@ -11,16 +11,17 @@ use Net::SNMP qw(:snmp);
 my $OID_Sentry4 = '1.3.6.1.4.1.1718.4.1.7';
 
 my ($session, $error) = Net::SNMP->session(
-   -hostname    => shift || 'localhost',
-   -community   => shift || 'public',
-   -nonblocking => 1,
-   -translate   => [-octetstring => 0],
-   -version     => 'snmpv2c',
+   -hostname     => shift || 'localhost',
+   -username     => shift || 'nagios',
+   -authpassword => shift || 'nagios',
+   -nonblocking  => 1,
+   -translate    => [-octetstring => 0],
+   -version      => 'snmpv3',
 );
 
 if (!defined $session) {
    printf "ERROR: %s.\n", $error;
-   exit 1;
+   exit 3;
 }
 
 my %table; # Hash to store the results
@@ -34,7 +35,7 @@ my $result = $session->get_bulk_request(
 if (!defined $result) {
    printf "ERROR: %s\n", $session->error();
    $session->close();
-   exit 1;
+   exit 3;
 }
 
 # Now initiate the SNMP message exchange.
@@ -56,41 +57,60 @@ my $status = 'OK';
 my $return_code = 0;
 
 # NOTE: 30A circuit, 2x 20A branches
-# circuit should warn at 80% (24A) and crit at 90% (27A)
-# branch should warn at 80% (16A) and crit at 90% (18A)
-# THUS: we will calibrate the branch warnings to avoid circuit overload
-# branch circuit should warn at 60% (12A) and crit at 70% (14A)
 
 my $branch_1_amps_name	= $table{$OID_Sentry4 . ".2.1.2.1.1.1"};
 my $branch_1_amps_curr = $table{$OID_Sentry4 . ".3.1.3.1.1.1"};
 $branch_1_amps_curr = $branch_1_amps_curr * .01;
 my $branch_1_amps_max  = $table{$OID_Sentry4 . ".2.1.6.1.1.1"};
-my $branch_1_amps_crit = $branch_1_amps_max * .7;
-my $branch_1_amps_warn = $branch_1_amps_max * .6;
+my $branch_1_amps_crit = $branch_1_amps_max * .9;
+my $branch_1_amps_warn = $branch_1_amps_max * .8;
 my $branch_1_str = sprintf "%s=%0.2f;%d;%d;0;%d;",
 ($branch_1_amps_name, $branch_1_amps_curr, $branch_1_amps_warn,
 	$branch_1_amps_crit, $branch_1_amps_max);
-if( $branch_1_amps_curr >= $branch_1_amps_warn ) {
-	$status = 'WARNING'; $return_code = 1;
-}
-if( $branch_1_amps_curr >= $branch_1_amps_crit ) {
-	$status = 'CRITICAL'; $return_code = 2;
-}
 
 my $branch_2_amps_name	= $table{$OID_Sentry4 . ".2.1.2.1.1.2"};
 my $branch_2_amps_curr = $table{$OID_Sentry4 . ".3.1.3.1.1.2"};
 $branch_2_amps_curr = $branch_2_amps_curr * .01;
 my $branch_2_amps_max  = $table{$OID_Sentry4 . ".2.1.6.1.1.2"};
-my $branch_2_amps_crit = $branch_2_amps_max * .7;
-my $branch_2_amps_warn = $branch_2_amps_max * .6;
+my $branch_2_amps_crit = $branch_2_amps_max * .9;
+my $branch_2_amps_warn = $branch_2_amps_max * .8;
 my $branch_2_str = sprintf "%s=%0.2f;%d;%d;0;%d;",
 ($branch_2_amps_name, $branch_2_amps_curr, $branch_2_amps_warn,
 	$branch_2_amps_crit, $branch_2_amps_max);
+
+# branch should warn at 80% (16A) and crit at 90% (18A)
+if( $branch_1_amps_curr >= $branch_1_amps_warn ) {
+	$return_code++;
+}
+if( $branch_1_amps_curr >= $branch_1_amps_crit ) {
+	$return_code++;
+}
+
+# branch should warn at 80% (16A) and crit at 90% (18A)
 if( $branch_2_amps_curr >= $branch_2_amps_warn ) {
-	$status = 'WARNING'; $return_code = 1;
+	$return_code++;
 }
 if( $branch_2_amps_curr >= $branch_2_amps_crit ) {
-	$status = 'CRITICAL'; $return_code = 2;
+	$return_code++;
+}
+
+# Check circuit ... assume 30A
+# circuit should warn at 80% (24A) and crit at 90% (27A)
+if( $branch_1_amps_curr + $branch_2_amps_curr > 24 ) {
+	$return_code++;
+}
+if( $branch_1_amps_curr + $branch_2_amps_curr > 27 ) {
+	$return_code++;
+}
+
+# If only 1 warning ...
+if( $return_code == 1 ) {
+	$status = 'WARNING';
+}
+# If multiple warnings or critical ...
+if( $return_code > 1 ) {
+	$return_code = 2;
+	$status = 'CRITICAL';
 }
 
 # OK - circuit load: 6.76, 7.82, 6.56|Master_X=6.76;16;18;0;20; Master_Y=7.82;16;18;0;20; Master_Z=6.56;16;18;0;20;
@@ -107,7 +127,8 @@ sub table_callback
 
    if (!defined $list) {
       printf "ERROR: %s\n", $session->error();
-      return;
+      $session->close();
+      exit 3;
    }
 
    # Loop through each of the OIDs in the response and assign
@@ -138,6 +159,8 @@ sub table_callback
 
    if (!defined $result) {
       printf "ERROR: %s.\n", $session->error();
+      $session->close();
+      exit 3;
    }
 
    return;
