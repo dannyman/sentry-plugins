@@ -66,10 +66,16 @@ Master_Z.value 1.7
 Or:
 
 ```
-$ sudo munin-run snmp_my-other-pdu_sentry4
+$ sudo munin-run snmp_my-2branch-pdu_sentry4
 multigraph power_amps_drawn
 AA:BR1.value 1.89
 AA:BR2.value 2.25
+
+$ sudo munin-run snmp_my-3branch-pdu_sentry4
+multigraph power_amps_drawn
+AA:BR1.value 2.24
+AA:BR2.value 0.95
+AA:BR3.value 1.58
 ```
 
 On your Munin Master node, add the node to your **/etc/munin/munin.conf** file.  This is explained at http://munin-monitoring.org/wiki/Using_SNMP_plugins.
@@ -110,5 +116,7 @@ These are quick and dirty and brittle and probably will not work for you
 without a little TLC.
 
 Assumptions behind these hacky checks: `sentry3` is for 208V 20A 3-phase
-circuit, `sentry4` is for 208V 30A dual-branch circuit.
+circuit, `sentry4` is for 208V 30A dual or triple-branch circuit.
 
+`check_sentry4` takes hostname, SNMPv3 username, and password as
+arguments.
