@@ -107,8 +107,7 @@ multiplying Amps * 208V * 1000.  Your Voltage might be different.
 # Nagios
 
 These are quick and dirty and brittle and probably will not work for you
-without a little TLC. They take no parameters beyond hostname and
-optional SNMP community name.
+without a little TLC.
 
 Assumptions behind these hacky checks: `sentry3` is for 208V 20A 3-phase
 circuit, `sentry4` is for 208V 30A dual-branch circuit.
