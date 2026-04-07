@@ -107,12 +107,14 @@ if( $branch_2_amps_curr >= $branch_2_amps_crit ) {
 	$return_code++;
 }
 
-# branch should warn at 80% (16A) and crit at 90% (18A)
-if( $branch_3_amps_curr >= $branch_3_amps_warn ) {
-	$return_code++;
-}
-if( $branch_3_amps_curr >= $branch_3_amps_crit ) {
-	$return_code++;
+if( $branch_3_amps_name ) {
+	# branch should warn at 80% (16A) and crit at 90% (18A)
+	if( $branch_3_amps_curr >= $branch_3_amps_warn ) {
+		$return_code++;
+	}
+	if( $branch_3_amps_curr >= $branch_3_amps_crit ) {
+		$return_code++;
+	}
 }
 
 # Check circuit ... assume 30A

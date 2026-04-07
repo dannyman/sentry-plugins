@@ -120,3 +120,31 @@ circuit, `sentry4` is for 208V 30A dual or triple-branch circuit.
 
 `check_sentry4` takes hostname, SNMPv3 username, and password as
 arguments.
+
+Sample Nagios commamd:
+```
+# sentry4 PDUs
+define command{
+    command_name    check_sentry4
+    command_line    $USER1$/check_sentry4 $HOSTADDRESS$ $USER3$ $USER4$
+}
+```
+
+Sample Service checks:
+```
+define service{ # PDU load at 90% of circuit rating
+    use                       generic-service
+    hostgroup_name            pdu
+    service_description       Circuit Over Load
+    notification_options      c,u,r
+    check_command             check_sentry4
+}
+define service{ # PDU sustained load at 80% of circuit rating for 3 hours
+    use                       generic-service
+    hostgroup_name            pdu
+    service_description       Circuit High Load Sustained
+    notification_options      w,r
+    first_notification_delay  180
+    check_command             check_sentry4
+}
+```
