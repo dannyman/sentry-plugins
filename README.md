@@ -6,7 +6,7 @@ Munin and Nagios plugins for a three-phase Server Tech PDU.
 # Munin
 
 For Munin: RTFM
-* http://munin-monitoring.org/wiki/munin-node-configure
+* https://guide.munin-monitoring.org/en/latest/reference/munin-node-configure.html
 * http://munin.readthedocs.org/en/latest/tutorial/snmp.html
 
 Quick and Dirty:
